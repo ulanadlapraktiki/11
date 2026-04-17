@@ -1,0 +1,35 @@
+﻿<Window x:Class="WpfApp2.RegisterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Регистрация" Height="450" Width="400"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+
+    <Border Background="White" CornerRadius="10" Margin="10" BorderBrush="#CCCCCC" BorderThickness="1">
+        <StackPanel Margin="20">
+
+            <TextBlock Text="📝 Регистрация" FontSize="18" FontWeight="Bold" 
+                       Foreground="#2C3E50" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+
+            <TextBlock Text="Логин *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+            <TextBox x:Name="txtLogin" Height="30" FontSize="13" Padding="8,0" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Email" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+            <TextBox x:Name="txtEmail" Height="30" FontSize="13" Padding="8,0" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Пароль *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+            <PasswordBox x:Name="txtPassword" Height="30" FontSize="13" Padding="8,0" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Подтверждение *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+            <PasswordBox x:Name="txtConfirmPassword" Height="30" FontSize="13" Padding="8,0" Margin="0,0,0,15"/>
+
+            <TextBlock x:Name="txtMessage" Foreground="Red" TextAlignment="Center" FontSize="11" Height="25"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="btnSave" Content="Зарегистрироваться" Width="150" Height="35" Margin="5"
+                        Background="#27AE60" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                <Button x:Name="btnCancel" Content="Отмена" Width="100" Height="35" Margin="5"
+                        Background="#95A5A6" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

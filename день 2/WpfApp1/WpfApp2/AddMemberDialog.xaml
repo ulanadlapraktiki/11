@@ -1,0 +1,46 @@
+﻿<Window x:Class="WpfApp2.AddMemberDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="➕ Добавление посетителя" Height="480" Width="450"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="White">
+
+    <Border CornerRadius="10" Margin="10" BorderBrush="#CCCCCC" BorderThickness="1" Background="White">
+        <StackPanel Margin="20">
+
+            <TextBlock Text="➕ Добавление посетителя в группу" FontSize="18" FontWeight="Bold" 
+                       Foreground="#2C3E50" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+
+            <TextBlock Text="Фамилия *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E" Margin="0,0,0,3"/>
+            <TextBox x:Name="txtLastName" Height="32" Margin="0,0,0,12" Padding="8,0" 
+                     BorderBrush="#D1D9E6" BorderThickness="1"/>
+
+            <TextBlock Text="Имя *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E" Margin="0,0,0,3"/>
+            <TextBox x:Name="txtFirstName" Height="32" Margin="0,0,0,12" Padding="8,0" 
+                     BorderBrush="#D1D9E6" BorderThickness="1"/>
+
+            <TextBlock Text="Отчество" FontSize="12" FontWeight="SemiBold" Foreground="#34495E" Margin="0,0,0,3"/>
+            <TextBox x:Name="txtMiddleName" Height="32" Margin="0,0,0,12" Padding="8,0" 
+                     BorderBrush="#D1D9E6" BorderThickness="1"/>
+
+            <TextBlock Text="Телефон" FontSize="12" FontWeight="SemiBold" Foreground="#34495E" Margin="0,0,0,3"/>
+            <TextBox x:Name="txtPhone" Height="32" Margin="0,0,0,12" Padding="8,0" 
+                     BorderBrush="#D1D9E6" BorderThickness="1"/>
+
+            <TextBlock Text="Email *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E" Margin="0,0,0,3"/>
+            <TextBox x:Name="txtEmail" Height="32" Margin="0,0,0,20" Padding="8,0" 
+                     BorderBrush="#D1D9E6" BorderThickness="1"/>
+
+            <TextBlock x:Name="lblError" Foreground="#E74C3C" FontSize="11" Height="25" TextAlignment="Center"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <Button x:Name="btnSave" Content="✅ Добавить" Width="110" Height="38" Margin="5"
+                        Background="#27AE60" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand"/>
+                <Button x:Name="btnCancel" Content="❌ Отмена" Width="100" Height="38" Margin="5"
+                        Background="#95A5A6" Foreground="White" FontSize="13"
+                        BorderThickness="0" Cursor="Hand"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
