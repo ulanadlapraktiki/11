@@ -1,0 +1,70 @@
+﻿<Window x:Class="WpfApp1.AddRequestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+Title="📝 Новая заявка" Height="665" Width="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+
+    <Border Background="White" CornerRadius="10" Margin="10" BorderBrush="#CCCCCC" BorderThickness="1">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+
+                <TextBlock Text="📝 Новая заявка на посещение" FontSize="18" FontWeight="Bold" 
+                           Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                <TextBlock Text="📅 Дата начала *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <DatePicker x:Name="dpStartDate" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="📅 Дата окончания *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <DatePicker x:Name="dpEndDate" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="🎯 Цель посещения *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtPurpose" Height="50" TextWrapping="Wrap" Margin="0,5,0,10"/>
+
+                <TextBlock Text="🏢 Подразделение *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <ComboBox x:Name="cbDepartment" Height="35" Margin="0,5,0,10" IsEditable="True">
+                    <ComboBoxItem>IT отдел</ComboBoxItem>
+                    <ComboBoxItem>Бухгалтерия</ComboBoxItem>
+                    <ComboBoxItem>Отдел кадров</ComboBoxItem>
+                    <ComboBoxItem>Производство</ComboBoxItem>
+                    <ComboBoxItem>Склад</ComboBoxItem>
+                </ComboBox>
+
+                <TextBlock Text="👤 Фамилия *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtLastName" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="👤 Имя *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtFirstName" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="👤 Отчество" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtMiddleName" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="📧 Email *" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtEmail" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="📞 Телефон" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtPhone" Height="35" Margin="0,5,0,10"/>
+
+                <TextBlock Text="🆔 Серия паспорта" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtPassportSeries" Height="35" Margin="0,5,0,10" MaxLength="4"/>
+
+                <TextBlock Text="🆔 Номер паспорта" FontSize="12" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtPassportNumber" Height="35" Margin="0,5,0,10" MaxLength="6"/>
+
+                <TextBlock x:Name="lblMessage" Foreground="Red" TextAlignment="Center" Margin="0,10" Height="30"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                    <Button x:Name="btnSave" Content="✅ Сохранить" Width="120" Height="40" Margin="5"
+                            Background="#27AE60" Foreground="White" FontSize="13"
+                            BorderThickness="0" Cursor="Hand" Click="BtnSave_Click"/>
+                    <Button x:Name="btnCancel" Content="❌ Отмена" Width="120" Height="40" Margin="5"
+                            Background="#95A5A6" Foreground="White" FontSize="13"
+                            BorderThickness="0" Cursor="Hand" Click="BtnCancel_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</Window>
