@@ -1,0 +1,515 @@
+﻿using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Security.Cryptography;
+using System.Text;
+using System.Windows;
+
+namespace HranitelPro
+{
+    public class DatabaseHelper
+    {
+        private string connString = "Host=localhost;Port=5432;Database=HraniteelPRO;Username=postgres;Password=postgres;Include Error Detail=true";
+
+        public string HashMD5(string input)
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in hash) sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        private DataTable Query(string sql, params NpgsqlParameter[] parameters)
+        {
+            using var conn = new NpgsqlConnection(connString);
+            using var cmd = new NpgsqlCommand(sql, conn);
+            if (parameters != null) cmd.Parameters.AddRange(parameters);
+            conn.Open();
+            var dt = new DataTable();
+            dt.Load(cmd.ExecuteReader());
+            return dt;
+        }
+
+        private int Execute(string sql, params NpgsqlParameter[] parameters)
+        {
+            using var conn = new NpgsqlConnection(connString);
+            using var cmd = new NpgsqlCommand(sql, conn);
+            if (parameters != null) cmd.Parameters.AddRange(parameters);
+            conn.Open();
+            return cmd.ExecuteNonQuery();
+        }
+
+        private DateTime ConvertToDateTime(object value)
+        {
+            if (value is DateTime dt) return dt;
+            if (value is DateOnly dateOnly) return dateOnly.ToDateTime(TimeOnly.MinValue);
+            if (value is string str) return DateTime.Parse(str);
+            return Convert.ToDateTime(value);
+        }
+
+        public bool LoginSQL(string login, string hash)
+        {
+            var dt = Query("SELECT COUNT(*) FROM users WHERE login=@l AND passwordhash=@p",
+                new NpgsqlParameter("l", login), new NpgsqlParameter("p", hash));
+            return Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        public User? LoginORM(string login, string hash)
+        {
+            var dt = Query("SELECT userid, lastname, firstname, patronymic, login FROM users WHERE login=@l AND passwordhash=@p",
+                new NpgsqlParameter("l", login), new NpgsqlParameter("p", hash));
+            if (dt.Rows.Count == 0) return null;
+            var row = dt.Rows[0];
+            return new User
+            {
+                UserID = Convert.ToInt32(row["userid"]),
+                LastName = row["lastname"]?.ToString() ?? "",
+                FirstName = row["firstname"]?.ToString() ?? "",
+                Patronymic = row["patronymic"]?.ToString(),
+                Login = row["login"]?.ToString() ?? ""
+            };
+        }
+
+        public bool LoginExists(string login)
+        {
+            var dt = Query("SELECT COUNT(*) FROM users WHERE login=@l", new NpgsqlParameter("l", login));
+            return Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        public bool RegisterSQL(string last, string first, string? patron, string? phone, string email,
+                          DateTime birth, string passport, string login, string hash)
+        {
+            string sql = @"INSERT INTO users (lastname, firstname, patronymic, phone, email, birthdate, passportdata, login, passwordhash) 
+                           VALUES (@ln, @fn, @pat, @ph, @em, @bd, @pd, @l, @pwd)";
+            return Execute(sql,
+                new NpgsqlParameter("ln", last),
+                new NpgsqlParameter("fn", first),
+                new NpgsqlParameter("pat", string.IsNullOrEmpty(patron) ? DBNull.Value : (object)patron),
+                new NpgsqlParameter("ph", string.IsNullOrEmpty(phone) ? DBNull.Value : (object)phone),
+                new NpgsqlParameter("em", email),
+                new NpgsqlParameter("bd", birth),
+                new NpgsqlParameter("pd", passport),
+                new NpgsqlParameter("l", login),
+                new NpgsqlParameter("pwd", hash)) > 0;
+        }
+
+        public Employee? GetEmployeeByCode(string code)
+        {
+            var dt = Query("SELECT id, code, login, role, department FROM employees WHERE code = @code",
+                new NpgsqlParameter("code", code));
+            if (dt.Rows.Count == 0) return null;
+            var row = dt.Rows[0];
+            return new Employee
+            {
+                Id = (Guid)row["id"],
+                Code = row["code"]?.ToString() ?? "",
+                Login = row["login"]?.ToString() ?? "",
+                Role = row["role"]?.ToString() ?? "",
+                Department = row["department"]?.ToString()
+            };
+        }
+
+        public bool EmployeeCodeExists(string code)
+        {
+            var dt = Query("SELECT COUNT(*) FROM employees WHERE code = @code", new NpgsqlParameter("code", code));
+            return Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        public DataTable GetAllEmployees()
+        {
+            return Query("SELECT id, code, login, role, department FROM employees ORDER BY login");
+        }
+
+        public List<RequestItem> GetUserRequests(int userId)
+        {
+            var list = new List<RequestItem>();
+            var dt = Query(@"SELECT requestid, requesttype, status, startdate, enddate, visitpurpose, targetdepartment, createdat
+                            FROM visitrequests WHERE userid=@uid ORDER BY createdat DESC",
+                            new NpgsqlParameter("uid", userId));
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new RequestItem
+                {
+                    Id = Convert.ToInt32(row["requestid"]),
+                    Type = row["requesttype"]?.ToString() ?? "",
+                    Status = row["status"]?.ToString() ?? "",
+                    StartDate = ConvertToDateTime(row["startdate"]).ToShortDateString(),
+                    EndDate = ConvertToDateTime(row["enddate"]).ToShortDateString(),
+                    Purpose = row["visitpurpose"]?.ToString() ?? "",
+                    Department = row["targetdepartment"]?.ToString() ?? "",
+                    CreatedAt = ConvertToDateTime(row["createdat"]).ToShortDateString()
+                });
+            }
+            return list;
+        }
+
+        public DataRow? GetRequestByIdAsDataRow(int requestId)
+        {
+            var dt = Query(@"SELECT requestid, requesttype, status, startdate, enddate, visitpurpose, targetdepartment, note,
+                           visitor_lastname, visitor_firstname, visitor_patronymic, visitor_phone, visitor_email,
+                           visitor_organization, visitor_birthdate, visitor_passportdata
+                    FROM visitrequests WHERE requestid=@id",
+                            new NpgsqlParameter("id", requestId));
+            if (dt.Rows.Count == 0) return null;
+            return dt.Rows[0];
+        }
+
+        public RequestFull? GetRequestById(int requestId)
+        {
+            var dt = Query(@"SELECT requestid, requesttype, status, startdate, enddate, visitpurpose, targetdepartment, note,
+                           visitor_lastname, visitor_firstname, visitor_patronymic, visitor_phone, visitor_email,
+                           visitor_organization, visitor_birthdate, visitor_passportdata
+                    FROM visitrequests WHERE requestid=@id",
+                            new NpgsqlParameter("id", requestId));
+            if (dt.Rows.Count == 0) return null;
+            var row = dt.Rows[0];
+            return new RequestFull
+            {
+                RequestID = Convert.ToInt32(row["requestid"]),
+                RequestType = row["requesttype"]?.ToString() ?? "",
+                Status = row["status"]?.ToString() ?? "",
+                StartDate = ConvertToDateTime(row["startdate"]),
+                EndDate = ConvertToDateTime(row["enddate"]),
+                VisitPurpose = row["visitpurpose"]?.ToString() ?? "",
+                TargetDepartment = row["targetdepartment"]?.ToString() ?? "",
+                Note = row["note"]?.ToString() ?? "",
+                VisitorLastName = row["visitor_lastname"]?.ToString() ?? "",
+                VisitorFirstName = row["visitor_firstname"]?.ToString() ?? "",
+                VisitorPatronymic = row["visitor_patronymic"]?.ToString(),
+                VisitorPhone = row["visitor_phone"]?.ToString(),
+                VisitorEmail = row["visitor_email"]?.ToString() ?? "",
+                VisitorOrganization = row["visitor_organization"]?.ToString(),
+                VisitorBirthDate = row["visitor_birthdate"] == DBNull.Value ? DateTime.Now : ConvertToDateTime(row["visitor_birthdate"]),
+                VisitorPassportData = row["visitor_passportdata"]?.ToString() ?? ""
+            };
+        }
+
+        public int CreateRequest(int userId, DateTime start, DateTime end, string purpose, string dept, int empId, string note,
+                          string lastName, string firstName, string? patronymic, string? phone, string email,
+                          string? organization, DateTime birthDate, string passportData)
+        {
+            string sql = @"INSERT INTO visitrequests (userid, requesttype, status, startdate, enddate, 
+                   visitpurpose, targetdepartment, targetemployeeid, note,
+                   visitor_lastname, visitor_firstname, visitor_patronymic, visitor_phone, visitor_email,
+                   visitor_organization, visitor_birthdate, visitor_passportdata)
+                   VALUES (@uid, 'личная', 'проверка', @start, @end, @purpose, @dept, @emp, @note,
+                           @ln, @fn, @pat, @ph, @em, @org, @bd, @pd) RETURNING requestid";
+
+            using var conn = new NpgsqlConnection(connString);
+            conn.Open();
+            using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("uid", userId);
+            cmd.Parameters.AddWithValue("start", start);
+            cmd.Parameters.AddWithValue("end", end);
+            cmd.Parameters.AddWithValue("purpose", purpose);
+            cmd.Parameters.AddWithValue("dept", dept);
+            cmd.Parameters.AddWithValue("emp", empId);
+            cmd.Parameters.AddWithValue("note", note);
+            cmd.Parameters.AddWithValue("ln", lastName);
+            cmd.Parameters.AddWithValue("fn", firstName);
+            cmd.Parameters.AddWithValue("pat", string.IsNullOrEmpty(patronymic) ? DBNull.Value : (object)patronymic);
+            cmd.Parameters.AddWithValue("ph", string.IsNullOrEmpty(phone) ? DBNull.Value : (object)phone);
+            cmd.Parameters.AddWithValue("em", email);
+            cmd.Parameters.AddWithValue("org", string.IsNullOrEmpty(organization) ? DBNull.Value : (object)organization);
+            cmd.Parameters.AddWithValue("bd", birthDate);
+            cmd.Parameters.AddWithValue("pd", passportData);
+
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+
+        public int UpdateRequest(int requestId, DateTime start, DateTime end, string purpose, string dept, int empId, string note,
+                          string lastName, string firstName, string? patronymic, string? phone, string email,
+                          string? organization, DateTime birthDate, string passportData)
+        {
+            string sql = @"UPDATE visitrequests SET 
+                   startdate=@start, enddate=@end, visitpurpose=@purpose, 
+                   targetdepartment=@dept, targetemployeeid=@emp, note=@note,
+                   visitor_lastname=@ln, visitor_firstname=@fn, visitor_patronymic=@pat,
+                   visitor_phone=@ph, visitor_email=@em, visitor_organization=@org,
+                   visitor_birthdate=@bd, visitor_passportdata=@pd
+                   WHERE requestid=@id";
+
+            Execute(sql,
+                new NpgsqlParameter("start", start),
+                new NpgsqlParameter("end", end),
+                new NpgsqlParameter("purpose", purpose),
+                new NpgsqlParameter("dept", dept),
+                new NpgsqlParameter("emp", empId),
+                new NpgsqlParameter("note", note),
+                new NpgsqlParameter("ln", lastName),
+                new NpgsqlParameter("fn", firstName),
+                new NpgsqlParameter("pat", string.IsNullOrEmpty(patronymic) ? DBNull.Value : (object)patronymic),
+                new NpgsqlParameter("ph", string.IsNullOrEmpty(phone) ? DBNull.Value : (object)phone),
+                new NpgsqlParameter("em", email),
+                new NpgsqlParameter("org", string.IsNullOrEmpty(organization) ? DBNull.Value : (object)organization),
+                new NpgsqlParameter("bd", birthDate),
+                new NpgsqlParameter("pd", passportData),
+                new NpgsqlParameter("id", requestId));
+
+            return requestId;
+        }
+
+        public int DeleteRequest(int requestId)
+        {
+            return Execute("DELETE FROM visitrequests WHERE requestid=@id", new NpgsqlParameter("id", requestId));
+        }
+
+        public bool UpdateRequestStatus(int requestId, string status)
+        {
+            return Execute("UPDATE visitrequests SET status = @status WHERE requestid = @id",
+                new NpgsqlParameter("status", status),
+                new NpgsqlParameter("id", requestId)) > 0;
+        }
+
+        public bool UpdateVisitDateTime(int requestId, DateTime startDate, DateTime endDate)
+        {
+            return Execute("UPDATE visitrequests SET startdate = @start, enddate = @end WHERE requestid = @id",
+                new NpgsqlParameter("start", startDate),
+                new NpgsqlParameter("end", endDate),
+                new NpgsqlParameter("id", requestId)) > 0;
+        }
+
+        public DataTable GetAllRequests()
+        {
+            return Query(@"SELECT r.requestid, r.requesttype, r.status, r.startdate, r.enddate, 
+                                  r.visitpurpose, r.targetdepartment, r.note,
+                                  r.visitor_lastname, r.visitor_firstname, r.visitor_patronymic, 
+                                  r.visitor_phone, r.visitor_email,
+                                  u.lastname AS user_lastname, u.firstname AS user_firstname
+                           FROM visitrequests r
+                           LEFT JOIN users u ON r.userid = u.userid
+                           ORDER BY r.createdat DESC");
+        }
+
+        public DataTable GetDepartments()
+        {
+            return Query("SELECT DISTINCT department FROM employees WHERE department IS NOT NULL ORDER BY department");
+        }
+
+        public DataTable GetEmployees(string department)
+        {
+            return Query(@"SELECT id as employeeid, login as fullname FROM employees WHERE department=@dept ORDER BY login",
+                           new NpgsqlParameter("dept", department));
+        }
+
+        public List<AttachedFile> GetAttachedFiles(int requestId)
+        {
+            var list = new List<AttachedFile>();
+            var dt = Query("SELECT fileid, filetype, filepath, filename FROM attachedfiles WHERE requestid = @id",
+                new NpgsqlParameter("id", requestId));
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new AttachedFile
+                {
+                    FileId = Convert.ToInt32(row["fileid"]),
+                    FileType = row["filetype"]?.ToString() ?? "",
+                    FilePath = row["filepath"]?.ToString() ?? "",
+                    FileName = row["filename"]?.ToString() ?? ""
+                });
+            }
+            return list;
+        }
+
+        public int AddAttachedFile(int requestId, string fileType, string filePath, string fileName)
+        {
+            string sql = @"INSERT INTO attachedfiles (requestid, filetype, filepath, filename) 
+                   VALUES (@rid, @type, @path, @name)";
+            return Execute(sql,
+                new NpgsqlParameter("rid", requestId),
+                new NpgsqlParameter("type", fileType),
+                new NpgsqlParameter("path", filePath),
+                new NpgsqlParameter("name", fileName));
+        }
+
+        public int DeleteAttachedFile(int fileId)
+        {
+            return Execute("DELETE FROM attachedfiles WHERE fileid = @id", new NpgsqlParameter("id", fileId));
+        }
+
+        public int DeleteAllAttachedFiles(int requestId)
+        {
+            return Execute("DELETE FROM attachedfiles WHERE requestid = @rid", new NpgsqlParameter("rid", requestId));
+        }
+
+        public bool IsInBlacklist(string lastName, string firstName, string passportNumber)
+        {
+            var dt = Query(@"SELECT COUNT(*) FROM blacklist b
+                           JOIN guests g ON b.guest_id = g.id
+                           WHERE g.last_name = @ln AND g.first_name = @fn",
+                           new NpgsqlParameter("ln", lastName),
+                           new NpgsqlParameter("fn", firstName));
+            return Convert.ToInt32(dt.Rows[0][0]) > 0;
+        }
+
+        public bool AddToBlacklist(Guid guestId, string reason)
+        {
+            string sql = "INSERT INTO blacklist (id, guest_id, reason) VALUES (@id, @gid, @reason)";
+            return Execute(sql,
+                new NpgsqlParameter("id", Guid.NewGuid()),
+                new NpgsqlParameter("gid", guestId),
+                new NpgsqlParameter("reason", reason)) > 0;
+        }
+
+        public DataTable GetBlacklist()
+        {
+            return Query(@"SELECT b.id, b.reason, b.created_at, 
+                                  g.last_name, g.first_name, g.middle_name, g.passport_number
+                           FROM blacklist b
+                           JOIN guests g ON b.guest_id = g.id
+                           ORDER BY b.created_at DESC");
+        }
+
+        public Guid AddGuest(Guest guest)
+        {
+            string sql = @"INSERT INTO guests (id, last_name, first_name, middle_name, 
+                           passport_series, passport_number, birth_date, phone, email, organization) 
+                           VALUES (@id, @ln, @fn, @mn, @ps, @pn, @bd, @ph, @em, @org) RETURNING id";
+
+            using var conn = new NpgsqlConnection(connString);
+            using var cmd = new NpgsqlCommand(sql, conn);
+            Guid newId = Guid.NewGuid();
+            cmd.Parameters.AddWithValue("id", newId);
+            cmd.Parameters.AddWithValue("ln", guest.LastName);
+            cmd.Parameters.AddWithValue("fn", guest.FirstName);
+            cmd.Parameters.AddWithValue("mn", string.IsNullOrEmpty(guest.MiddleName) ? DBNull.Value : (object)guest.MiddleName);
+            cmd.Parameters.AddWithValue("ps", string.IsNullOrEmpty(guest.PassportSeries) ? DBNull.Value : (object)guest.PassportSeries);
+            cmd.Parameters.AddWithValue("pn", string.IsNullOrEmpty(guest.PassportNumber) ? DBNull.Value : (object)guest.PassportNumber);
+            cmd.Parameters.AddWithValue("bd", guest.BirthDate);
+            cmd.Parameters.AddWithValue("ph", string.IsNullOrEmpty(guest.Phone) ? DBNull.Value : (object)guest.Phone);
+            cmd.Parameters.AddWithValue("em", guest.Email);
+            cmd.Parameters.AddWithValue("org", string.IsNullOrEmpty(guest.Organization) ? DBNull.Value : (object)guest.Organization);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+            return newId;
+        }
+
+        public Guest? GetGuestById(Guid guestId)
+        {
+            var dt = Query("SELECT * FROM guests WHERE id = @id", new NpgsqlParameter("id", guestId));
+            if (dt.Rows.Count == 0) return null;
+            var row = dt.Rows[0];
+            return new Guest
+            {
+                Id = (Guid)row["id"],
+                LastName = row["last_name"]?.ToString() ?? "",
+                FirstName = row["first_name"]?.ToString() ?? "",
+                MiddleName = row["middle_name"]?.ToString(),
+                PassportSeries = row["passport_series"]?.ToString(),
+                PassportNumber = row["passport_number"]?.ToString(),
+                BirthDate = Convert.ToDateTime(row["birth_date"]),
+                Phone = row["phone"]?.ToString(),
+                Email = row["email"]?.ToString() ?? "",
+                Organization = row["organization"]?.ToString()
+            };
+        }
+
+        public bool AddGroupMember(Guid requestId, Guid guestId)
+        {
+            string sql = "INSERT INTO group_members (id, request_id, guest_id) VALUES (@id, @rid, @gid)";
+            return Execute(sql,
+                new NpgsqlParameter("id", Guid.NewGuid()),
+                new NpgsqlParameter("rid", requestId),
+                new NpgsqlParameter("gid", guestId)) > 0;
+        }
+
+        public DataTable GetGroupMembers(Guid requestId)
+        {
+            return Query(@"SELECT g.id, g.last_name, g.first_name, g.middle_name, g.passport_number, g.phone, g.email
+                           FROM group_members gm
+                           JOIN guests g ON gm.guest_id = g.id
+                           WHERE gm.request_id = @rid",
+                           new NpgsqlParameter("rid", requestId));
+        }
+
+        public bool AddAccessLog(Guid requestId, string accessType)
+        {
+            string sql = "INSERT INTO access_logs (request_id, access_time, access_type) VALUES (@rid, @time, @type)";
+            return Execute(sql,
+                new NpgsqlParameter("rid", requestId),
+                new NpgsqlParameter("time", DateTime.Now),
+                new NpgsqlParameter("type", accessType)) > 0;
+        }
+
+        public DataTable GetAccessLogs(Guid requestId)
+        {
+            return Query("SELECT * FROM access_logs WHERE request_id = @rid ORDER BY access_time DESC",
+                new NpgsqlParameter("rid", requestId));
+        }
+    }
+
+    public class User
+    {
+        public int UserID { get; set; }
+        public string LastName { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string? Patronymic { get; set; }
+        public string Login { get; set; } = "";
+    }
+
+    public class RequestItem
+    {
+        public int Id { get; set; }
+        public string Type { get; set; } = "";
+        public string Status { get; set; } = "";
+        public string StartDate { get; set; } = "";
+        public string EndDate { get; set; } = "";
+        public string Purpose { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string CreatedAt { get; set; } = "";
+    }
+
+    public class RequestFull
+    {
+        public int RequestID { get; set; }
+        public string RequestType { get; set; } = "";
+        public string Status { get; set; } = "";
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string VisitPurpose { get; set; } = "";
+        public string TargetDepartment { get; set; } = "";
+        public string Note { get; set; } = "";
+        public string VisitorLastName { get; set; } = "";
+        public string VisitorFirstName { get; set; } = "";
+        public string? VisitorPatronymic { get; set; }
+        public string? VisitorPhone { get; set; }
+        public string VisitorEmail { get; set; } = "";
+        public string? VisitorOrganization { get; set; }
+        public DateTime VisitorBirthDate { get; set; }
+        public string VisitorPassportData { get; set; } = "";
+    }
+
+    public class AttachedFile
+    {
+        public int FileId { get; set; }
+        public string FileType { get; set; } = "";
+        public string FilePath { get; set; } = "";
+        public string FileName { get; set; } = "";
+    }
+
+    public class Employee
+    {
+        public Guid Id { get; set; }
+        public string Code { get; set; } = "";
+        public string Login { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string? Department { get; set; }
+    }
+
+    public class Guest
+    {
+        public Guid Id { get; set; }
+        public string LastName { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string? MiddleName { get; set; }
+        public string? PassportSeries { get; set; }
+        public string? PassportNumber { get; set; }
+        public DateTime BirthDate { get; set; }
+        public string? Phone { get; set; }
+        public string Email { get; set; } = "";
+        public string? Organization { get; set; }
+    }
+}

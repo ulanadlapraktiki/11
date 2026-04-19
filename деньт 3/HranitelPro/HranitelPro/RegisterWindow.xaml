@@ -1,0 +1,77 @@
+﻿<Window x:Class="HranitelPro.RegisterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Регистрация" Height="887" Width="450"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#F5F7FA">
+
+    <Border Background="White" CornerRadius="15" Margin="10" BorderBrush="#E1E5EB" BorderThickness="1">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="25">
+
+                <TextBlock Text="📝 Регистрация" FontSize="22" FontWeight="Bold" 
+                           Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Заполните все обязательные поля" FontSize="12" 
+                           Foreground="#7F8C8D" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                <TextBlock Text="Фамилия *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtLastName" Height="35" Padding="10,0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Имя *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtFirstName" Height="35" Padding="10,0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Отчество" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtPatronymic" Height="35" Padding="10,0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Телефон" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtPhone" Height="35" Padding="10,0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Email *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtEmail" Height="35" Padding="10,0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Дата рождения *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <DatePicker x:Name="dpBirthDate" SelectedDate="2000-01-01" Height="35" Margin="0,0,0,12"/>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Серия паспорта *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                        <TextBox x:Name="txtPassportSeries" MaxLength="4" Height="35" Padding="10,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Номер паспорта *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                        <TextBox x:Name="txtPassportNumber" MaxLength="6" Height="35" Padding="10,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <Border Height="1" Background="#E1E5EB" Margin="0,10,0,15"/>
+
+                <TextBlock Text="Логин *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <TextBox x:Name="txtLogin" Height="35" Padding="10,0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Пароль *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <PasswordBox x:Name="txtPassword" Height="35" Padding="10,0" Margin="0,0,0,12" PasswordChar="●"/>
+
+                <TextBlock Text="Подтверждение пароля *" FontSize="13" FontWeight="SemiBold" Foreground="#34495E"/>
+                <PasswordBox x:Name="txtConfirmPassword" Height="35" Padding="10,0" Margin="0,0,0,15" PasswordChar="●"/>
+
+                <Border Background="#FDEDEC" CornerRadius="8" Padding="10" Margin="0,5,0,10" Visibility="Collapsed" x:Name="errorBorder">
+                    <TextBlock x:Name="lblError" Foreground="#E74C3C" TextAlignment="Center" FontSize="12" TextWrapping="Wrap"/>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="btnRegister" Content="✅ Зарегистрироваться" Height="45" Width="170" Margin="5"
+                            Background="#27AE60" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                            BorderThickness="0" Cursor="Hand"/>
+                    <Button x:Name="btnBack" Content="◀ Назад" Height="45" Width="120" Margin="5"
+                            Background="#95A5A6" Foreground="White" FontSize="13"
+                            BorderThickness="0" Cursor="Hand"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</Window>
