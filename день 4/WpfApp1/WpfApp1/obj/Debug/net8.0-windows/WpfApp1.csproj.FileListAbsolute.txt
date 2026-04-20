@@ -52,3 +52,4 @@ C:\ico\11\день 4\WpfApp1\WpfApp1\obj\Debug\net8.0-windows\refint\WpfApp1.dll
 C:\ico\11\день 4\WpfApp1\WpfApp1\obj\Debug\net8.0-windows\WpfApp1.pdb
 C:\ico\11\день 4\WpfApp1\WpfApp1\obj\Debug\net8.0-windows\WpfApp1.genruntimeconfig.cache
 C:\ico\11\день 4\WpfApp1\WpfApp1\obj\Debug\net8.0-windows\ref\WpfApp1.dll
+C:\ico\11\день 4\WpfApp1\WpfApp1\obj\Debug\net8.0-windows\WpfApp1_Content.g.cs

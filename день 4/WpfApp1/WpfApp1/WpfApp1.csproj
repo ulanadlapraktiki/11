@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>events_calendar_16342.ico</ApplicationIcon>
+    <ApplicationIcon>icon_general_department.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="events_calendar_16342.ico" />
+    <Content Include="icon_general_department.ico" />
   </ItemGroup>
 
   <ItemGroup>
